@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import React, { useState, useEffect } from 'react';
 import TimerDisplay from "./TimerDisplay";
 import TimerControls from "./TimerControls";
 import LapList from "./LapList";
@@ -9,15 +9,16 @@ const Timer = () => {
     const [timerOn, setTimerOn] = useState(false);
     const [laps, setLaps] = useState([]);
 
-    const formatTime = () => {
-        const minutes = ("0" + (Math.floor(milliseconds / 600000) % 60)).slice(-2);
-        const seconds = ("0" + (Math.floor(milliseconds / 1000) % 60)).slice(-2);
-        const centiseconds = ("0" + (Math.floor(milliseconds / 10) % 10)).slice(-2);
+    useEffect(() => {
+        let interval = null;
+        if (timerOn) {
+            interval = startTimer(interval);
+        } else if (!timerOn) {
+            interval = stopTimer(interval);
+        }
 
-        return `${minutes}:${seconds}:${centiseconds}`;
-
-
-    };
+        return () => stopTimer(interval);
+    }, [timerOn]);
 
     const startTimer = (interval) => {
         return setInterval(() => {
@@ -31,27 +32,38 @@ const Timer = () => {
 
     };
 
-    useEffect(() => {
-        let interval = null;
-        if (timerOn) {
-            interval = startTimer(interval);
-        } else {
-            interval = stopTimer(interval);
-        }
-        
-        return () => stopTimer(interval);
-    }, [timerOn]);
+    const resetTimer = () => {
+        setMilliseconds(0);
+        setTimerOn(false);
+        setLaps([]);
+    }
+
+    const addLap = () => {
+        setLaps([...laps, formatTime()]);
+    };
+
+    const formatTime = () => {
+        const minutes = ("0" + (Math.floor(milliseconds / 600000) % 60)).slice(-2);
+        const seconds = ("0" + (Math.floor(milliseconds / 1000) % 60)).slice(-2);
+        const centiseconds = ("0" + (Math.floor(milliseconds / 10) % 100)).slice(-2);
+
+        return `${minutes}:${seconds}:${centiseconds}`;
+    };
+
 
     return (
         <div className="timer-container">
             <TimerDisplay time={formatTime()} />
             <TimerControls
+                timerOn={timerOn}
                 onStart={() => setTimerOn(true)}
                 onStop={() => setTimerOn(false)}
-
+                onReset={resetTimer}
+                onLap={addLap}
             />
-            <LapList />
+            <LapList laps={laps} />
         </div>
+
     );
 };
 
